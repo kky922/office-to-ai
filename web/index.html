@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Office → AI 붙여넣기 변환기</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/turndown@7.2.0/dist/turndown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  if (window["pdfjsLib"]) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  }
+</script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+<div class="max-w-5xl mx-auto p-6 space-y-6">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-bold">Office → AI 붙여넣기 변환기</h1>
+    <p class="text-sm text-slate-600">
+      xlsx · docx · pptx · pdf 파일을 브라우저 안에서만 변환합니다. 파일은 서버로 전송되지 않습니다.
+      원본 구조를 최대한 보존한 마크다운 청크로 분할해 Claude/ChatGPT 채팅창에 바로 붙여넣을 수 있습니다.
+    </p>
+  </header>
+
+  <section id="dropzone"
+    class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center bg-white hover:border-indigo-400 transition cursor-pointer">
+    <p class="text-lg font-medium">여기로 파일을 끌어다 놓거나 클릭해서 선택</p>
+    <p class="text-xs text-slate-500 mt-1">.xlsx .xlsm .docx .pptx .pdf — 여러 파일 동시 가능</p>
+    <input id="file-input" type="file" multiple accept=".xlsx,.xlsm,.docx,.pptx,.pdf" class="hidden" />
+  </section>
+
+  <section class="bg-white rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+    <label class="flex flex-col">
+      <span class="text-slate-600">최대 토큰(청크)</span>
+      <input id="opt-max-tokens" type="number" value="8000" min="500" step="500"
+        class="mt-1 border rounded px-2 py-1" />
+    </label>
+    <label class="flex flex-col">
+      <span class="text-slate-600">청크 오버랩(토큰)</span>
+      <input id="opt-overlap" type="number" value="0" min="0" step="50"
+        class="mt-1 border rounded px-2 py-1" />
+    </label>
+    <label class="flex flex-col">
+      <span class="text-slate-600">이미지</span>
+      <select id="opt-images" class="mt-1 border rounded px-2 py-1">
+        <option value="extract" selected>별도 폴더 + 참조</option>
+        <option value="placeholder">자리표시자만</option>
+        <option value="omit">완전 생략</option>
+      </select>
+    </label>
+    <label class="flex flex-col">
+      <span class="text-slate-600">Excel 시트 분할 기준(행)</span>
+      <input id="opt-sheet-rows" type="number" value="200" min="20" step="20"
+        class="mt-1 border rounded px-2 py-1" />
+    </label>
+  </section>
+
+  <section id="progress" class="hidden bg-white rounded-xl p-4 space-y-2 text-sm">
+    <div class="flex justify-between">
+      <span id="progress-label">변환 중…</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="w-full bg-slate-200 rounded h-2 overflow-hidden">
+      <div id="progress-bar" class="bg-indigo-500 h-full" style="width:0%"></div>
+    </div>
+  </section>
+
+  <section id="results" class="space-y-6"></section>
+
+  <footer class="text-xs text-slate-500 pt-6 border-t">
+    토큰 수는 문자수/4 기반 근사값입니다. 실제 LLM 토큰과 다를 수 있습니다.
+  </footer>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
